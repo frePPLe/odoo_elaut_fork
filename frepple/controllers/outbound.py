@@ -2522,7 +2522,7 @@ class exporter(object):
 
             # Get MTO link
             mto_so = (
-                i.sale_line_id.order_id.ids
+                i.procurement_group_id.sale_id
                 + i.procurement_group_id.mrp_production_ids.move_dest_ids.group_id.sale_id
             )
             if mto_so:
