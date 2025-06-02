@@ -1408,6 +1408,10 @@ class exporter(object):
                 1.0, i["product_uom_id"], i["product_tmpl_id"][0]
             )
 
+            # Elaut: skip engineering BOMs
+            if i["type"] == "ebom":
+                continue
+
             # Loop over all subcontractors
             if i["type"] == "subcontract":
                 subcontractors = self.product_templates[i["product_tmpl_id"][0]].get(
