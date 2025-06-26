@@ -2427,6 +2427,7 @@ class exporter(object):
             # Filter out irrelevant manufacturing orders
             location = self.map_locations.get(i.location_dest_id.id, None)
             operation = i.name
+            type = "MO"
             if not location and i.picking_type_id:
                 # For subcontracting MO we find the warehouse on the operation type
                 operation_type = self.operation_types.get(i.picking_type_id.id, None)
@@ -2436,6 +2437,7 @@ class exporter(object):
                         code = self.subcontracting_mo_po_mapping.get(i.id, None)
                         if code:
                             operation = code
+                            type = "subcontractor"
             item = self.product_product.get(i.product_id.id, None)
             if not item or not location:
                 continue
@@ -2501,8 +2503,9 @@ class exporter(object):
 
             if not self.manage_work_orders or not getattr(i, "workorder_ids", None):
                 # There are no workorders on the manufacturing order (or we don't want to see them in frepple)
-                yield '<operation name=%s xsi:type="operation_fixed_time" priority="0"><location name=%s/><item name=%s/><flows>' % (
+                yield '<operation name=%s category=%s xsi:type="operation_fixed_time" priority="0"><location name=%s/><item name=%s/><flows>' % (
                     quoteattr(operation),
+                    quoteattr(type),
                     quoteattr(location),
                     quoteattr(item["name"]),
                 )
