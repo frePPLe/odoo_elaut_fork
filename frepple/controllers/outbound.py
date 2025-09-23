@@ -1299,10 +1299,14 @@ class exporter(object):
                         }
                 if suppliers:
                     yield "<itemsuppliers>\n"
-                    for k, v in suppliers.items():
+                    first_supplier = True
+                    for k, v in sorted(suppliers.items(), key=lambda item: item[1]['sequence']):
+                        # Elaut customization: only send active supplier
+                        if v["date_end"] and v["date_end"] < self.currentdate:
+                            continue
                         yield '<itemsupplier leadtime="P%dD" priority="%s" batchwindow="P%dD" size_minimum="%f" cost="%f"%s%s><supplier name=%s/></itemsupplier>\n' % (
                             v["delay"],
-                            v["sequence"] or 1,
+                            v["sequence"] if first_supplier else 0, # ELaut custimization: only use the primary supplier
                             v["batching_window"] or 0,
                             v["min_qty"],
                             max(0, v["price"]),
@@ -1320,6 +1324,7 @@ class exporter(object):
                             ),
                             quoteattr(k[0]),
                         )
+                        first_supplier = False
                     yield "</itemsuppliers>\n"
             yield "</item>\n"
         if not first:
