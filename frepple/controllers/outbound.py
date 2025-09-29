@@ -1418,6 +1418,7 @@ class exporter(object):
                 "product_qty_multiple",
             ],
         ):
+            yield "<!-- BOM %s -->\n" % i
             # Determine the location
             location = self.mfg_location
 
@@ -1443,6 +1444,7 @@ class exporter(object):
                 subcontractors = [{}]
 
             for product_id in product_template["product_variant_ids"]:
+                yield "<!-- variant %s -->\n" % product_id
                 # In the case of variants, the BOM needs to apply to the correct product
                 if i["product_id"] and not (i["product_id"][0] == product_id):
                     continue
