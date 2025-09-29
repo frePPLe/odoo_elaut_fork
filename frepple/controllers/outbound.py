@@ -86,11 +86,12 @@ class Odoo_generator:
             if object:
                 return self.env[model].search(search, limit=limit, offset=offset)
             else:
- 				return (
+                return (
                     self.env[model]
                     .search(search, limit=limit, offset=offset)
                     .read(fields)
                 )
+
 
 class exporter(object):
     def __init__(
@@ -1038,10 +1039,15 @@ class exporter(object):
         self.routes = {
             i["id"]: i for i in self.generator.getData("stock.route", fields=["name"])
         }
-        self.route_mto = None
+        self.routes_mto = set()
         for k, v in self.routes.items():
-            if v["name"] == "Replenish on Order (MTO)":
-                self.route_mto = k
+            if v["name"] in (
+                "Replenish on Order (MTO)",
+                "MTO EBE",  # Elaut specific
+                "MTO SP EBE",  # Elaut specific
+                "MTO ME",  # Elaut specific
+            ):
+                self.routes_mto.add(k)
         for i in self.generator.getData(
             "product.template",
             search=[("type", "not in", ("service", "combo"))],
@@ -1201,7 +1207,11 @@ class exporter(object):
                 / self.convert_qty_uom(1.0, tmpl["uom_id"], i["product_tmpl_id"][0]),
                 tmpl["uom_id"][0],
                 i["id"],
-                ' type="item_mto"' if self.route_mto in tmpl["route_ids"] else "",
+                (
+                    ' type="item_mto"'
+                    if any(r in self.routes_mto for r in tmpl["route_ids"])
+                    else ""
+                ),
                 (
                     (
                         ' shelflife="%s"'
@@ -1300,13 +1310,17 @@ class exporter(object):
                 if suppliers:
                     yield "<itemsuppliers>\n"
                     first_supplier = True
-                    for k, v in sorted(suppliers.items(), key=lambda item: item[1]['sequence']):
+                    for k, v in sorted(
+                        suppliers.items(), key=lambda item: item[1]["sequence"]
+                    ):
                         # Elaut customization: only send active supplier
                         if v["date_end"] and v["date_end"] < self.currentdate:
                             continue
                         yield '<itemsupplier leadtime="P%dD" priority="%s" batchwindow="P%dD" size_minimum="%f" cost="%f"%s%s><supplier name=%s/></itemsupplier>\n' % (
                             v["delay"],
-                            v["sequence"] if first_supplier else 0, # ELaut custimization: only use the primary supplier
+                            (
+                                v["sequence"] if first_supplier else 0
+                            ),  # ELaut customization: only use the primary supplier
                             v["batching_window"] or 0,
                             v["min_qty"],
                             max(0, v["price"]),
@@ -2266,9 +2280,9 @@ class exporter(object):
                         continue
 
                     # MTO links
-                    if (
-                        self.route_mto
-                        in self.product_templates[item["template"]]["route_ids"]
+                    if any(
+                        r in self.routes_mto
+                        for r in self.product_templates[item["template"]]["route_ids"]
                     ):
                         mto_so = mv.move_dest_ids.group_id.sale_id
                         batch = mto_so[0].name if mto_so else None
@@ -2371,9 +2385,9 @@ class exporter(object):
                         continue
 
                     # MTO links
-                    if (
-                        self.route_mto
-                        in self.product_templates[item["template"]]["route_ids"]
+                    if any(
+                        r in self.routes_mto
+                        for r in self.product_templates[item["template"]]["route_ids"]
                     ):
                         mto_so = i.move_dest_ids.group_id.sale_id
                         batch = mto_so[0].name if mto_so else None
