@@ -1507,7 +1507,7 @@ class exporter(object):
                                 i["days_to_prepare_mo"] or 0
                             )
 
-                            yield '<operation name=%s %ssize_multiple="1" duration="%s" posttime="P%dD" priority="%s" xsi:type="operation_fixed_time">\n' "<item name=%s/><location name=%s/>\n" % (
+                            yield '<operation name=%s %ssize_multiple="1" duration="%s" posttime="P%dD" priority="%s" category=%s xsi:type="operation_fixed_time">\n' "<item name=%s/><location name=%s/>\n" % (
                                 quoteattr(operation),
                                 (
                                     ("description=%s " % quoteattr(i["code"]))
@@ -1521,6 +1521,7 @@ class exporter(object):
                                 ),
                                 self.manufacturing_lead,
                                 100 + (i["sequence"] or 1),
+                                quoteattr(i["type"] or ""),
                                 quoteattr(product_buf["name"]),
                                 quoteattr(location),
                             )
@@ -1695,7 +1696,7 @@ class exporter(object):
                         # CASE 2: A routing operation is created with a suboperation for each
                         # routing step.
                         #
-                        yield '<operation name=%s %ssize_multiple="1" posttime="P%dD" priority="%s" xsi:type="operation_routing"><item name=%s/><location name=%s/>\n' % (
+                        yield '<operation name=%s %ssize_multiple="1" posttime="P%dD" priority="%s" category=%s xsi:type="operation_routing"><item name=%s/><location name=%s/>\n' % (
                             quoteattr(operation),
                             (
                                 ("description=%s " % quoteattr(i["code"]))
@@ -1704,6 +1705,7 @@ class exporter(object):
                             ),
                             self.manufacturing_lead,
                             100 + (i["sequence"] or 1),
+                            quoteattr(i["type"] or ""),
                             quoteattr(product_buf["name"]),
                             quoteattr(location),
                         )
@@ -1856,7 +1858,7 @@ class exporter(object):
                                     )
                                 )
 
-                            yield "<suboperation>" '<operation name=%s %spriority="%s" duration_per="%s" posttime="%s" xsi:type="operation_time_per">\n' "<location name=%s/>\n" '<loads><load quantity="%f" search=%s><resource name=%s/>%s</load>%s</loads>\n' % (
+                            yield "<suboperation>" '<operation name=%s %spriority="%s" duration_per="%s" category=%s posttime="%s" xsi:type="operation_time_per">\n' "<location name=%s/>\n" '<loads><load quantity="%f" search=%s><resource name=%s/>%s</load>%s</loads>\n' % (
                                 quoteattr(name),
                                 (
                                     ("description=%s " % quoteattr(i["code"]))
@@ -1871,6 +1873,7 @@ class exporter(object):
                                     if step["time_cycle"] and step["time_cycle"] > 0
                                     else "P0D"
                                 ),
+                                quoteattr(i["type"] or ""),
                                 (
                                     self.convert_float_time(
                                         step["post_operation_time"], "hours"
