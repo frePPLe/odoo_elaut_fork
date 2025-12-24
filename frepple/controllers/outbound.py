@@ -1562,6 +1562,7 @@ class exporter(object):
                                 "product_id",
                                 "operation_id",
                                 "bom_product_template_attribute_value_ids",
+                                "xx_not_bom_product_template_attribute_value_ids",
                             ],
                         ):
                             # check if this BOM line applies to this variant
@@ -1571,6 +1572,15 @@ class exporter(object):
                                 elem in j["bom_product_template_attribute_value_ids"]
                                 for elem in product_buf[
                                     "product_template_attribute_value_ids"
+                                ]
+                            ):
+                                continue
+                            # Elaut: exclude for some variants
+                            if any(
+                                excl
+                                in product_buf["product_template_attribute_value_ids"]
+                                for excl in j[
+                                    "xx_not_bom_product_template_attribute_value_ids"
                                 ]
                             ):
                                 continue
