@@ -1035,6 +1035,24 @@ class exporter(object):
             for i in self.generator.getData("product.tag", fields=["name"])
         }
 
+        # Elaut read the xx.supply.type records in memory for later use
+        self.xx_supply_types = {
+            i["id"]: i
+            for i in self.generator.getData(
+                "xx.supply.type",
+                fields=[
+                    "name",
+                    "route_ids",
+                    "display_name",
+                    "manufacture_bom",
+                    "kitting_bom",
+                    "subcontracting_bom",
+                    "e_bom",
+                    "spare_bom",
+                ],
+            )
+        }
+
         # Read the product templates
         self.product_product = {}
         self.product_template_product = {}
@@ -1064,6 +1082,7 @@ class exporter(object):
                 "product_variant_ids",
                 "route_ids",
                 "product_tag_ids",
+                "xx_supply_type_id",  # Elaut specific
             ]
             + (
                 [
@@ -1256,11 +1275,20 @@ class exporter(object):
             if tmpl["purchase_ok"]:
                 suppliers = {}
                 for sup in itemsuppliers.get(tmpl["id"], []):
+                    # Elaut: look up xx_supply_type_id
+                    xx_supply_type = (
+                        self.xx_supply_types.get(tmpl["xx_supply_type_id"][0], None)
+                        if tmpl["id"]["xx_supply_type_id"]
+                        else None
+                    )
                     name = self.map_suppliers.get(sup["partner_id"][0], None)
                     if not name:
                         # Skip uninterested suppliers (eg archived ones)
                         continue
                     if sup.get("is_subcontractor", False):
+                        if xx_supply_type and not xx_supply_type["subcontracting_bom"]:
+                            # Elaut: Skip this subcontractor if supply type does not allow it.
+                            continue
                         if not hasattr(tmpl, "subcontractors"):
                             tmpl["subcontractors"] = []
                         tmpl["subcontractors"].append(
@@ -1272,6 +1300,16 @@ class exporter(object):
                             }
                         )
                     elif (name, sup["date_start"]) in suppliers:
+                        if xx_supply_type and (
+                            xx_supply_type["manufacture_bom"]
+                            or xx_supply_type["subcontracting_bom"]
+                            or xx_supply_type["kitting_bom"]
+                            or xx_supply_type["e_bom"]
+                            or xx_supply_type["spare_bom"]
+                        ):
+                            # Elaut: Skip this supplier if supply type is for manufacturing.
+                            # Only when no bom type is allowed do we accept to buy from a normal supplier.
+                            continue
                         # If there are multiple records with the same supplier & start date
                         # we pass a single record to frepple with lowest-lead-time,
                         # lowest-quantity, lowest-sequence, greatest-end-date.
@@ -1434,8 +1472,22 @@ class exporter(object):
                 1.0, i["product_uom_id"], i["product_tmpl_id"][0]
             )
 
-            # Elaut: skip engineering BOMs
-            if i["type"] == "ebom":
+            # Elaut: skip boms that aren't allowed by the supply type
+            xx_supply_type = (
+                self.xx_supply_types.get(product_template["xx_supply_type_id"][0], None)
+                if product_template["id"]["xx_supply_type_id"]
+                else None
+            )
+            if xx_supply_type and (
+                (i["type"] == "normal" and not xx_supply_type["manufacture_bom"])
+                or (i["type"] == "phantom" and not xx_supply_type["kitting_bom"])
+                or (
+                    i["type"] == "subcontract"
+                    and not xx_supply_type["subcontracting_bom"]
+                )
+                or (i["type"] == "ebom" and not xx_supply_type["e_bom"])
+                or (i["type"] == "spbom" and not xx_supply_type["spare_bom"])
+            ):
                 continue
 
             # Loop over all subcontractors
