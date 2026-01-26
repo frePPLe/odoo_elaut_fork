@@ -1340,6 +1340,16 @@ class exporter(object):
                         ):
                             r["date_end"] = sup["date_end"]
                     else:
+                        if xx_supply_type and (
+                            xx_supply_type["manufacture_bom"]
+                            or xx_supply_type["subcontracting_bom"]
+                            or xx_supply_type["kitting_bom"]
+                            or xx_supply_type["e_bom"]
+                            or xx_supply_type["spare_bom"]
+                        ):
+                            # Elaut: Skip this supplier if supply type is for manufacturing.
+                            # Only when no bom type is allowed do we accept to buy from a normal supplier.
+                            continue
                         suppliers[(name, sup["date_start"])] = {
                             "delay": sup["delay"],
                             "sequence": sup["sequence"] or 1,
