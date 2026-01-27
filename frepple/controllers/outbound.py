@@ -1278,7 +1278,7 @@ class exporter(object):
                     # Elaut: look up xx_supply_type_id
                     xx_supply_type = (
                         self.xx_supply_types.get(tmpl["xx_supply_type_id"][0], None)
-                        if tmpl["id"]["xx_supply_type_id"]
+                        if tmpl["xx_supply_type_id"]
                         else None
                     )
                     name = self.map_suppliers.get(sup["partner_id"][0], None)
@@ -1485,7 +1485,7 @@ class exporter(object):
             # Elaut: skip boms that aren't allowed by the supply type
             xx_supply_type = (
                 self.xx_supply_types.get(product_template["xx_supply_type_id"][0], None)
-                if product_template["id"]["xx_supply_type_id"]
+                if product_template["xx_supply_type_id"]
                 else None
             )
             if xx_supply_type and (
