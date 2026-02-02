@@ -40,6 +40,9 @@ class Odoo_generator:
 
     def setContext(self, **kwargs):
         t = dict(self.env.context)
+        logger.error(
+            "FREPPLE DEBUGGING PO EXPORT %s %s" % (kwargs, t)
+        )
         t.update(kwargs)
         self.env = self.env(
             user=self.env.user,

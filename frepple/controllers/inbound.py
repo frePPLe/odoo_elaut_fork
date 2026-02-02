@@ -471,6 +471,10 @@ class importer(object):
 
                             # Aggregation of quantities under the same PO line
                             # only happens in incremental export
+                            logger.error(
+                                "FREPPLE DEBUGGING PO EXPORT %s %s"
+                                % (self.mode, self.mode.__class__)
+                            )
                             if self.mode == 2:
                                 product_supplier_dict[(item_id, supplier_id)] = po_line
                         else:
