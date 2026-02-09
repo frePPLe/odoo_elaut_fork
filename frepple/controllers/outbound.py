@@ -2419,9 +2419,9 @@ class exporter(object):
                                 if mto_so:
                                     batch = mto_so[0].name
                                     break
-                        if not batch:
-                            # A PO for a MTO product was created without a sales order link.
-                            batch = j.name
+                            if not batch:
+                                # A PO for a MTO product was created without a sales order link.
+                                batch = j.name
                     else:
                         batch = None
 
@@ -2636,10 +2636,11 @@ class exporter(object):
                         batch = mto_so[0].name
                         break
             try:
-                if (
-                    not batch
-                    and self.route_mto
-                    in self.product_product[i.product_id.id]["template"]["route_ids"]
+                if not batch and any(
+                    r in self.routes_mto
+                    for r in self.product_product[i.product_id.id]["template"][
+                        "route_ids"
+                    ]
                 ):
                     # A MO for a MTO product was created without a sales order link.
                     batch = i.name
