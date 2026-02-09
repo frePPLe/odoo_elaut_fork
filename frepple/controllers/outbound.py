@@ -2362,9 +2362,6 @@ class exporter(object):
                         ("bid", "confirmed", "cancel"),
                     ),
                     ("order_id.state", "=", False),
-                    "|",
-                    ("order_id.receipt_status", "!=", "full"),
-                    ("order_id.receipt_status", "=", False),
                 ],
                 object=True,
             )
