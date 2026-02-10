@@ -2337,6 +2337,10 @@ class exporter(object):
             )
             if po_specific_dest_moves:
                 # A chain of destination moves within the PO that needs to be recursed
+                logger.error(
+                    "FREPPLE.DEBUG: remaining quantity for stock move %s"
+                    % sm.display_name
+                )
                 return sum(
                     getRemainingQuantity(m, target_uom) for m in po_specific_dest_moves
                 )
