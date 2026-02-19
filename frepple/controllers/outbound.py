@@ -2650,7 +2650,9 @@ class exporter(object):
             # Get MTO link
             if any(
                 r in self.routes_mto
-                for r in self.product_product[i.product_id.id]["template"]["route_ids"]
+                for r in self.product_templates[
+                    self.product_product[i.product_id.id]["template"]
+                ]["route_ids"]
             ):
                 batch = getBatch(i)
                 if not batch:
