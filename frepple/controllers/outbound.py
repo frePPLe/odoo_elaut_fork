@@ -1292,16 +1292,47 @@ class exporter(object):
                         if xx_supply_type and not xx_supply_type["subcontracting_bom"]:
                             # Elaut: Skip this subcontractor if supply type does not allow it.
                             continue
-                        if not hasattr(tmpl, "subcontractors"):
+                        new_subcontractor = True
+                        if "subcontractors" not in tmpl:
                             tmpl["subcontractors"] = []
-                        tmpl["subcontractors"].append(
-                            {
-                                "name": name,
-                                "delay": sup["delay"],
-                                "priority": sup["sequence"] or 1,
-                                "size_minimum": sup["min_qty"],
-                            }
-                        )
+                        else:
+                            for s in tmpl["subcontractors"]:
+                                if (
+                                    s["name"] == name
+                                    and s["date_start"] == sup["date_start"]
+                                ):
+                                    # Already found a record for this subcontractor
+                                    if sup["delay"] and sup["delay"] < s["delay"]:
+                                        s["delay"] = sup["delay"]
+                                    if (
+                                        sup["sequence"]
+                                        and sup["sequence"] < s["priority"]
+                                    ):
+                                        s["priority"] = sup["sequence"]
+                                    if sup["min_qty"] and (
+                                        not s["size_minimum"]
+                                        or sup["min_qty"] < s["size_minimum"]
+                                    ):
+                                        s["size_minimum"] = sup["min_qty"]
+                                    if sup["date_end"] and (
+                                        not s["date_end"]
+                                        or sup["date_end"] > s["date_end"]
+                                    ):
+                                        s["date_end"] = sup["date_end"]
+                                    new_subcontractor = False
+                                    break
+                        if new_subcontractor:
+                            # New subcontractor
+                            tmpl["subcontractors"].append(
+                                {
+                                    "name": name,
+                                    "delay": sup["delay"],
+                                    "priority": sup["sequence"] or -1,
+                                    "size_minimum": sup["min_qty"],
+                                    "date_start": sup["date_start"],
+                                    "date_end": sup["date_end"],
+                                }
+                            )
                     elif (name, sup["date_start"]) in suppliers:
                         if xx_supply_type and (
                             xx_supply_type["manufacture_bom"]
@@ -1355,7 +1386,7 @@ class exporter(object):
                             continue
                         suppliers[(name, sup["date_start"])] = {
                             "delay": sup["delay"],
-                            "sequence": sup["sequence"] or 1,
+                            "sequence": sup["sequence"] or -1,
                             "batching_window": sup["batching_window"] or 0,
                             "min_qty": sup["min_qty"],
                             "price": max(0, sup["price"]),
@@ -1528,9 +1559,14 @@ class exporter(object):
                 for subcontractor in subcontractors:
                     # Build operation. The operation can either be a summary operation or a detailed
                     # routing.
-                    operation = "%s @ %s %d" % (
+                    operation = "%s @ %s%s %d" % (
                         product_buf["code"] or product_buf["name"],
                         subcontractor.get("name", location),
+                        (
+                            (" from %s" % subcontractor["date_start"])
+                            if subcontractor.get("date_start", None)
+                            else ""
+                        ),
                         i["id"],
                     )
                     if len(operation) > 300:
@@ -1552,7 +1588,7 @@ class exporter(object):
                         # All routing steps are collapsed in a single operation.
                         #
                         if subcontractor:
-                            yield '<operation name=%s %ssize_multiple="1" category="subcontractor" subcategory=%s duration="P%dD" posttime="P%dD" xsi:type="operation_fixed_time" priority="%s" size_minimum="%s">\n' "<item name=%s/><location name=%s/>\n" % (
+                            yield '<operation name=%s %ssize_multiple="1" category="subcontractor" subcategory=%s duration="P%dD" posttime="P%dD" xsi:type="operation_fixed_time" priority="%s" size_minimum="%s"%s%s>\n' "<item name=%s/><location name=%s/>\n" % (
                                 quoteattr(operation),
                                 (
                                     ("description=%s " % quoteattr(i["code"]))
@@ -1564,6 +1600,18 @@ class exporter(object):
                                 self.po_lead,
                                 subcontractor.get("priority", 1) + 50,
                                 subcontractor.get("size_minimum", 0),
+                                (
+                                    ' effective_start="%sT00:00:00"'
+                                    % subcontractor["date_start"].strftime("%Y-%m-%d")
+                                    if subcontractor.get("date_start", None)
+                                    else ""
+                                ),
+                                (
+                                    ' effective_end="%sT00:00:00"'
+                                    % subcontractor["date_end"].strftime("%Y-%m-%d")
+                                    if subcontractor.get("date_end", None)
+                                    else ""
+                                ),
                                 quoteattr(product_buf["name"]),
                                 quoteattr(location),
                             )
