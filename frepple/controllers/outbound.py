@@ -2093,6 +2093,7 @@ class exporter(object):
                 "state",
                 "product_id",
                 "product_uom_qty",
+                "commitment_date",
                 "product_uom",
                 "order_id",
                 "move_ids",
@@ -2192,7 +2193,7 @@ class exporter(object):
                 # Not interested in this sales order...
                 continue
             due = self.formatDateTime(
-                j.get("commitment_date", False) or j["date_order"]
+                i.get("commitment_date", False) or j.get("commitment_date", False) or j["date_order"]
             )
             priority = 1  # We give all customer orders the same default priority
 
@@ -2231,7 +2232,12 @@ class exporter(object):
                             reserved_quantity = getReservedAndDoneQuantity(
                                 sm, self.respect_reservations
                             )
-                            due = self.formatDateTime(sm["date"] or j["date_order"])
+                            due = self.formatDateTime(
+                                sm["date"]
+                                or i.get("commitment_date", False)
+                                or j.get("commitment_date", False)
+                                or j["date_order"]
+                            )
 
                             yield (
                                 '<demand name=%s batch=%s quantity="%s" due="%s" priority="%s" minshipment="%s" status="%s"><item name=%s/><customer name=%s/><location name=%s/>'
