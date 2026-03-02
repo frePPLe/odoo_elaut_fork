@@ -40,9 +40,7 @@ class Odoo_generator:
 
     def setContext(self, **kwargs):
         t = dict(self.env.context)
-        logger.error(
-            "FREPPLE DEBUGGING PO EXPORT %s %s" % (kwargs, t)
-        )
+        logger.error("FREPPLE DEBUGGING PO EXPORT %s %s" % (kwargs, t))
         t.update(kwargs)
         self.env = self.env(
             user=self.env.user,
@@ -1065,12 +1063,7 @@ class exporter(object):
         }
         self.routes_mto = set()
         for k, v in self.routes.items():
-            if v["name"] in (
-                "Replenish on Order (MTO)",
-                "MTO EBE",  # Elaut specific
-                "MTO SP EBE",  # Elaut specific
-                "MTO ME",  # Elaut specific
-            ):
+            if "MTO" in v["name"]:
                 self.routes_mto.add(k)
         for i in self.generator.getData(
             "product.template",
