@@ -2692,7 +2692,7 @@ class exporter(object):
             if i.product_id.tracking in ["serial", "lot"]:
                 # Tracking by lot or unique serial number requires that we track
                 # the production intent.
-                self.convert_qty_uom(
+                qty = self.convert_qty_uom(
                     i.product_qty,
                     i.product_uom_id.id,
                     self.product_product[i.product_id.id]["template"],
