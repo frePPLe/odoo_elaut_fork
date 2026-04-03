@@ -1392,7 +1392,7 @@ class exporter(object):
                         suppliers.items(), key=lambda item: item[1]["sequence"]
                     ):
                         # Elaut customization: only send active supplier
-                        if v["date_end"] and v["date_end"] < self.currentdate:
+                        if v["date_end"] and v["date_end"] < self.currentdate.date():
                             continue
                         yield '<itemsupplier leadtime="P%dD" priority="%s" batchwindow="P%dD" size_minimum="%f" cost="%f"%s%s><supplier name=%s/></itemsupplier>\n' % (
                             v["delay"],
