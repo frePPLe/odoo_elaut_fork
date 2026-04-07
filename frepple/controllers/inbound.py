@@ -746,6 +746,9 @@ class importer(object):
                                     # TODO no place to store the criticality
                                     # elem.get('criticality'),
                                     "origin": remark,
+                                    "xx_frepple_pegging": elem.get(
+                                        "salesorders", ""
+                                    ),  # Elaut extra
                                 }
                             )
                             # Remember odoo name for the MO reference passed by frepple.

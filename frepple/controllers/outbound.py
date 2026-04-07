@@ -2067,7 +2067,7 @@ class exporter(object):
         """
         # Get all sales order lines
         search = (
-            [("product_id", "!=", False)]
+            [("product_id", "!=", False), ("state", "!=", "cancel")]
             if self.delta >= 999
             else [
                 ("product_id", "!=", False),
@@ -2106,6 +2106,7 @@ class exporter(object):
                     "date_order",
                     "picking_policy",
                     "warehouse_id",
+                    "mrp_production_ids",  # Elaut: extra field needed
                 ],
             )
         }
@@ -2191,6 +2192,25 @@ class exporter(object):
                 or j["date_order"]
             )
             priority = 1  # We give all customer orders the same default priority
+
+            # Elaut: don't plan MTO sales order lines unless the MO-flag "xx_to_frepple" is set
+            if any(
+                r in self.routes_mto
+                for r in self.product_templates[product["template"]]["route_ids"]
+            ):
+                send_to_frepple = False
+                for mo in self.generator.getData(
+                    "mrp.production",
+                    ids=j["mrp_production_ids"],
+                    fields=["xx_to_frepple", "product_id", "state", "sale_line_id"],
+                ):
+                    if mo["sale_line_id"][0] == i["id"] and not (
+                        mo["state"] == "draft" and mo.get("xx_to_frepple", False)
+                    ):
+                        send_to_frepple = True
+                        break
+                if not send_to_frepple:
+                    continue
 
             # Possible sales order status are 'draft', 'sent', 'sale', 'done' and 'cancel'
 
@@ -2651,11 +2671,25 @@ class exporter(object):
         for i in self.generator.getData(
             "mrp.production",
             # Option 1: import only the odoo status from "confirmed" onwards
-            search=[("state", "in", ["progress", "confirmed", "to_close"])],
+            # Elaut: also include draft state - see below
+            search=[("state", "in", ["progress", "confirmed", "to_close", "draft"])],
             # Option 2: Also import draft manufacturing order from odoo (to avoid that frepple reproposes it another time)
             # search=[("state", "in", ["draft", "progress", "confirmed", "to_close"])],
             object=True,
         ):
+
+            # Elaut: send also draft MOs to frepple if they are for a MTO product and have the flag send_to_frepple set.
+            if i.state == "draft" and not (
+                i.xx_to_frepple
+                and any(
+                    r in self.routes_mto
+                    for r in self.product_templates[
+                        self.product_product[i.product_id.id]["template"]
+                    ]["route_ids"]
+                )
+            ):
+                continue
+
             # Filter out irrelevant manufacturing orders
             location = self.map_locations.get(i.location_dest_id.id, None)
             operation = i.name
