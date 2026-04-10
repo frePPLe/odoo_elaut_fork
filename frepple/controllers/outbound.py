@@ -2204,7 +2204,7 @@ class exporter(object):
                     ids=j["mrp_production_ids"],
                     fields=["xx_to_frepple", "product_id", "state", "sale_line_id"],
                 ):
-                    if mo["sale_line_id"][0] == i["id"] and not (
+                    if mo["sale_line_id"] and mo["sale_line_id"][0] == i["id"] and not (
                         mo["state"] == "draft" and mo.get("xx_to_frepple", False)
                     ):
                         send_to_frepple = True
