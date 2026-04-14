@@ -2210,7 +2210,7 @@ class exporter(object):
                 ):
                     if (
                         mo["product_id"]
-                        and mo["product_id"][0] == product["id"]
+                        and mo["product_id"][0] == i["product_id"][0]
                         and not (
                             mo["state"] == "draft" and mo.get("xx_to_frepple", False)
                         )
