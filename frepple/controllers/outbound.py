@@ -2205,8 +2205,7 @@ class exporter(object):
                     fields=[
                         "xx_to_frepple",
                         "product_id",
-                        "state",
-                        "mrp_production_ids",
+                        "state"
                     ],
                 ):
                     if (
