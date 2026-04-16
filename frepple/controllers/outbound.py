@@ -2202,17 +2202,13 @@ class exporter(object):
                 for mo in self.generator.getData(
                     "mrp.production",
                     ids=j["mrp_production_ids"],
-                    fields=[
-                        "xx_to_frepple",
-                        "product_id",
-                        "state"
-                    ],
+                    fields=["xx_to_frepple", "product_id", "state"],
                 ):
                     if (
                         mo["product_id"]
                         and mo["product_id"][0] == i["product_id"][0]
-                        and not (
-                            mo["state"] == "draft" and mo.get("xx_to_frepple", False)
+                        and (
+                            mo.get("xx_to_frepple", False) or not mo["state"] == "draft"
                         )
                     ):
                         send_to_frepple = True
