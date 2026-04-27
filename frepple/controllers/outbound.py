@@ -2646,6 +2646,8 @@ class exporter(object):
                 batch = self.getBatch(related_mo, [mo.id])
             elif related_mo.id not in mo_chain:
                 batch = self.getBatch(related_mo, mo_chain + [mo.id])
+            else:
+                batch = None
             if batch:
                 return batch
         if mo_chain:
@@ -3430,6 +3432,8 @@ class exporter(object):
                         batch = self.getBatch(mo)
                         if batch:
                             break
+            else:
+                batch = None
             if batch:
                 inventory[(item["name"], location, batch)] = (
                     inventory.get((item["name"], location, batch), 0)
