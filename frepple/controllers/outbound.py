@@ -1974,7 +1974,12 @@ class exporter(object):
                                     )
                                 )
 
-                            yield "<suboperation>" '<operation name=%s %spriority="%s" duration_per="%s" category=%s posttime="%s" xsi:type="operation_time_per">\n' "<location name=%s/>\n" '<loads><load quantity="%f" search=%s><resource name=%s/>%s</load>%s</loads>\n' % (
+                            yield (
+                                "<suboperation>"
+                                '<operation name=%s %spriority="%s" duration_per="%s" category=%s posttime="%s" xsi:type="operation_time_per">\n'
+                                "<location name=%s/>\n"
+                                '<loads><load quantity="%f" search=%s><resource name=%s/>%s</load>%s</loads>\n'
+                            ) % (
                                 quoteattr(name),
                                 (
                                     ("description=%s " % quoteattr(i["code"]))
