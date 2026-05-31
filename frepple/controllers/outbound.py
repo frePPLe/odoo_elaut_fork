@@ -2482,7 +2482,14 @@ class exporter(object):
                         not mv.product_id
                         or not mv.purchase_line_id
                         or not mv.location_dest_id
-                        or mv.state in ("draft", "cancel")
+                        or mv.state
+                        in (
+                            "draft",
+                            "cancel",
+                            # Do NOT exclude "done" moves, because they can be open moves chained to it
+                        )
+                        # Filter out return moves back to the supplier
+                        or mv.location_dest_id.usage == "supplier"
                     ):
                         continue
                     j = mv.purchase_line_id.order_id
@@ -2558,7 +2565,14 @@ class exporter(object):
                     end = self.formatDateTime(end)
 
                     # Compute the quantity that we still need to receive
-                    qty = getRemainingQuantity(mv, mv.product_id.uom_id)
+                    if batch:
+                        qty = getRemainingQuantity(mv, mv.product_id.uom_id)
+                    elif mv.state == "done":
+                        continue
+                    else:
+                        qty = mv.product_uom._compute_quantity(
+                            mv.product_uom_qty, mv.product_id.uom_id
+                        )
                     if qty <= 0:
                         continue
 
@@ -3604,10 +3618,10 @@ class exporter(object):
         for mvln in self.generator.getData(
             "stock.move.line",
             search=[
-                    ["location_id.usage", "=", "customer"],
-                    ["location_dest_id.usage", "=", "internal"],
-                    ["state", "not in", ["cancel", "done"]],
-                    ["quantity", ">", 0],
+                ["location_id.usage", "=", "customer"],
+                ["location_dest_id.usage", "=", "internal"],
+                ["state", "not in", ["cancel", "done"]],
+                ["quantity", ">", 0],
             ],
             fields=[
                 "product_id",
@@ -3665,10 +3679,6 @@ class exporter(object):
                 inventory_mto[(item["name"], location, batch)] = (
                     inventory_mto.get((item["name"], location, batch), 0)
                     + unconsumed_quantity
-                )
-            else:
-                inventory[(item["name"], location)] = (
-                    inventory.get((item["name"], location), 0) + unconsumed_quantity
                 )
 
         for key, val in inventory.items():
