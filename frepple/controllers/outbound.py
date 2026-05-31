@@ -2141,6 +2141,7 @@ class exporter(object):
                     "product_uom",
                     "state",
                     "move_line_ids",
+                    "picking_type_id",
                 ],
             )
         }
@@ -2246,8 +2247,15 @@ class exporter(object):
                         sol_name = (
                             "%s %s" % (name, mv_id) if len(i["move_ids"]) > 1 else name
                         )
-                        sm = stock_moves_dict.get(mv_id)
+                        sm = stock_moves_dict.get(mv_id, None)
                         if sm:
+                            if sm["picking_type_id"]:
+                                t = self.operation_types.get(
+                                    sm["picking_type_id"][0], None
+                                )
+                                if t and t["code"] == "incoming":
+                                    # Exclude return receipts
+                                    continue
                             qty = self.convert_qty_uom(
                                 sm["product_uom_qty"],
                                 sm["product_uom"],
@@ -3576,6 +3584,30 @@ class exporter(object):
                 "&",
                 ["move_id.group_id.mrp_production_ids", "=", False],
                 ["move_id.group_id.sale_id", "=", False],
+            ],
+            fields=[
+                "product_id",
+                "quantity",
+                "location_dest_id",
+                "move_id",
+            ],
+            order="product_id asc",
+        ):
+            item = self.product_product.get(mvln["product_id"][0], None)
+            location = self.map_locations.get(mvln["location_dest_id"][0], None)
+            if item and location:
+                inventory[(item["name"], location)] = (
+                    inventory.get((item["name"], location), 0) + mvln["quantity"]
+                )
+
+        # Add customer returns as inbound inventory
+        for mvln in self.generator.getData(
+            "stock.move.line",
+            search=[
+                    ["location_id.usage", "=", "customer"],
+                    ["location_dest_id.usage", "=", "internal"],
+                    ["state", "not in", ["cancel", "done"]],
+                    ["quantity", ">", 0],
             ],
             fields=[
                 "product_id",
