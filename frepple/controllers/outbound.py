@@ -2386,12 +2386,12 @@ class exporter(object):
                     '<item name=%s/><customer name=%s/><location name=%s/>'
                     '</demand>'
                 ) % (
-                    quoteattr(mv["display_name"]),
+                    quoteattr(f"{mv['display_name']} - {mv['id']}"),
                     self.convert_qty_uom(mv["product_uom_qty"], mv["product_uom"][0], item["template"]),
                     self.formatDateTime(mv["date"]),
                     quoteattr(item["name"]),
                     quoteattr(customer),
-                    quoteattr(location),                
+                    quoteattr(location),
                 )
 
         yield "</demands>\n"
@@ -3013,7 +3013,7 @@ class exporter(object):
                             )
                     if self.respect_reservations:
                         for l in mv.move_line_ids | mv.move_orig_ids.move_line_ids:
-                            if l.state == "assigned" and l.move_id.picking_id:
+                            if l.state == "assigned" and l.move_id.picking_id and not l.move_id.production_id:
                                 qty_flow -= l.product_uom_id._compute_quantity(
                                     l.quantity, default_uom
                                 )
@@ -3123,7 +3123,7 @@ class exporter(object):
                                 )
                         if self.respect_reservations:
                             for l in mv.move_line_ids | mv.move_orig_ids.move_line_ids:
-                                if l.state == "assigned" and l.move_id.picking_id:
+                                if l.state == "assigned" and l.move_id.picking_id and not l.move_id.production_id:
                                     qty_flow -= l.product_uom_id._compute_quantity(
                                         l.quantity, default_uom
                                     )
