@@ -2361,6 +2361,39 @@ class exporter(object):
                 quoteattr(i["order_id"][1]),
                 "alltogether" if j["picking_policy"] == "one" else "independent",
             )
+
+        # Elaut specific: consider confirmed moves into a scrap location as demand
+        for mv in self.generator.getData(
+            "stock.move",
+            search=[
+                ["state", "=", "confirmed"],
+                ["location_dest_id.scrap_location", "=", True],
+            ],
+            fields=[
+                "display_name",
+                "product_id",
+                "product_uom_qty",
+                "product_uom",  
+                "location_id",
+                "date",
+            ],
+        ):
+            item = self.product_product.get(mv["product_id"][0], None)
+            location = self.map_locations.get(mv["location_id"][0], None)
+            if item and location:
+                yield (
+                    '<demand name=%s quantity="%s" priority="-10" due="%s" minshipment="0" status="open">'
+                    '<item name=%s/><customer name=%s/><location name=%s/>'
+                    '</demand>'
+                ) % (
+                    quoteattr(mv["display_name"]),
+                    self.convert_qty_uom(mv["product_uom_qty"], mv["product_uom"][0], item["template"]),
+                    self.formatDateTime(mv["date"]),
+                    quoteattr(item["name"]),
+                    quoteattr(customer),
+                    quoteattr(location),                
+                )
+
         yield "</demands>\n"
 
     def export_forecasts(self):
