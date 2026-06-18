@@ -3013,7 +3013,8 @@ class exporter(object):
                             )
                     if self.respect_reservations:
                         for l in mv.move_line_ids | mv.move_orig_ids.move_line_ids:
-                            if l.state == "assigned" and l.move_id.picking_id and not l.move_id.production_id:
+                            if l.state == "assigned" and (not l.move_id.production_id or l.move_id.production_id.id == i.id):
+                                # Subtract physical reservations, but not virtual mto reservations
                                 qty_flow -= l.product_uom_id._compute_quantity(
                                     l.quantity, default_uom
                                 )
@@ -3123,7 +3124,11 @@ class exporter(object):
                                 )
                         if self.respect_reservations:
                             for l in mv.move_line_ids | mv.move_orig_ids.move_line_ids:
-                                if l.state == "assigned" and l.move_id.picking_id and not l.move_id.production_id:
+                                if l.state == "assigned" and (
+                                    not l.move_id.production_id
+                                    or l.move_id.production_id.id == i.id
+                                ):
+                                    # Subtract physical reservations, but not virtual mto reservations
                                     qty_flow -= l.product_uom_id._compute_quantity(
                                         l.quantity, default_uom
                                     )
