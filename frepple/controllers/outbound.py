@@ -2719,11 +2719,19 @@ class exporter(object):
                 if item and i.product_qty > i.qty_received:
                     start = j.date_order
                     if not isinstance(start, datetime):
-                        start = datetime.fromisoformat(start)
+                        try:
+                            start = datetime.fromisoformat(start)
+                        except Exception:
+                            start = None
                     end = i.date_planned
                     if not isinstance(end, datetime):
-                        end = datetime.fromisoformat(end)
-                    start = self.formatDateTime(start if start < end else end)
+                        try:
+                            end = datetime.fromisoformat(end)
+                        except Exception:
+                            end = None
+                    if not end:
+                        continue
+                    start = self.formatDateTime(start if start and start < end else end)
                     end = self.formatDateTime(end)
                     qty = self.convert_qty_uom(
                         i.product_qty - i.qty_received,
