@@ -170,7 +170,9 @@ class importer(object):
                             ("date_end", "=", False),
                             ("date_end", ">=", datetime.now()),
                             ("requisition_type", "=", "blanket_order"),
-                            ("state", "=", "confirmed"),
+                            # Custom Elaut status for blanket orders
+                            # ("state", "=", "confirmed"),
+                            ("state", "in", ["open", "active", "expiring"]),
                         ]
                     )
                 ]
@@ -450,7 +452,13 @@ class importer(object):
                                             "=",
                                             "blanket_order",
                                         ),
-                                        ("requisition_id.state", "=", "confirmed"),
+                                        # Custom Elaut status for blanket orders
+                                        # ("requisition_id.state", "=", "confirmed"),
+                                        (
+                                            "requisition_id.state",
+                                            "in",
+                                            ["open", "active", "expiring"],
+                                        ),
                                         ("product_id.id", "=", int(item_id)),
                                         (
                                             "requisition_id.vendor_id.id",
