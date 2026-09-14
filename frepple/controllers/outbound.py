@@ -924,6 +924,7 @@ class exporter(object):
                 "time_efficiency",
                 "default_capacity",
                 "tool",
+                "constrained",
             ],
         ):
             if first:
@@ -949,7 +950,7 @@ class exporter(object):
                 )
             )
             self.map_workcenters[i["id"]] = name
-            yield '<resource name=%s maximum="%s" category="%s" subcategory="%s" efficiency="%s"><location name=%s/>%s%s</resource>\n' % (
+            yield '<resource name=%s maximum="%s" category="%s" subcategory="%s" constrained="%s" efficiency="%s"><location name=%s/>%s%s</resource>\n' % (
                 quoteattr(name),
                 i["default_capacity"],
                 i["id"],
@@ -957,6 +958,7 @@ class exporter(object):
                 # "tool" if i["tool"] else "",
                 # Use this line if the tool usage is proportional to the MO quantity
                 "tool per piece" if i["tool"] else "",
+                "true" if i["constrained"] else "false",
                 i["time_efficiency"],
                 quoteattr(self.mfg_location),
                 ("<owner name=%s/>" % quoteattr(owner[1])) if owner else "",

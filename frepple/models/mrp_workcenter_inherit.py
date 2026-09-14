@@ -45,3 +45,8 @@ class WorkcenterInherit(models.Model):
         string="Skills",
         help="Skills the work center has",
     )
+    constrained = fields.Boolean(
+        "Constrained",
+        default=True,
+        help="Frepple: Mark workcenters which frepple should use as constraints in the plan.",
+    )

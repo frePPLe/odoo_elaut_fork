@@ -7,6 +7,7 @@
         <field name="arch" type="xml">
             <field name="name" position="after">
                 <field name="owner" />
+                <field name="constrained" optional="hide" />
                 <field name="tool" optional="hide" />
                 <field name="workcenter_skill_ids" string="skills" widget="many2many_tags" optional="hide" />
             </field>
@@ -20,6 +21,7 @@
         <field name="arch" type="xml">
             <field name="name" position="after">
                 <field name="owner" />
+                <field name="constrained" />
                 <field name="tool" />
             </field>
         </field>
