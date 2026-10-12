@@ -2900,6 +2900,31 @@ class exporter(object):
         """
         now = datetime.now()
 
+        def getReservedQuantity(move, production_id, target_uom, move_chain=None):
+            if move_chain is None:
+                move_chain = set()
+            if move.state == "cancel" or move.id in move_chain:
+                return 0.0
+            move_chain.add(move.id)
+
+            quantity = 0.0
+            for move_line in move.move_line_ids:
+                if move_line.state not in ("assigned", "partially_available"):
+                    continue
+                if (
+                    move_line.move_id.production_id
+                    and move_line.move_id.production_id.id != production_id
+                ):
+                    continue
+                quantity += move_line.product_uom_id._compute_quantity(
+                    move_line.quantity, target_uom
+                )
+
+            return quantity + sum(
+                getReservedQuantity(origin, production_id, target_uom, move_chain)
+                for origin in move.move_orig_ids
+            )
+
         yield "<!-- manufacturing orders in progress -->\n"
         yield "<operationplans>\n"
         for i in self.generator.getData(
@@ -3026,15 +3051,7 @@ class exporter(object):
                                 l.quantity, default_uom
                             )
                     if self.respect_reservations:
-                        for l in mv.move_line_ids | mv.move_orig_ids.move_line_ids:
-                            if l.state == "assigned" and (
-                                not l.move_id.production_id
-                                or l.move_id.production_id.id == i.id
-                            ):
-                                # Subtract physical reservations, but not virtual mto reservations
-                                qty_flow -= l.product_uom_id._compute_quantity(
-                                    l.quantity, default_uom
-                                )
+                        qty_flow -= getReservedQuantity(mv, i.id, default_uom)
                     if qty_flow > 0:
                         operation_materials[consumed_item["name"]] = (
                             operation_materials.get(consumed_item["name"], 0)
@@ -3140,15 +3157,7 @@ class exporter(object):
                                     l.quantity, default_uom
                                 )
                         if self.respect_reservations:
-                            for l in mv.move_line_ids | mv.move_orig_ids.move_line_ids:
-                                if l.state == "assigned" and (
-                                    not l.move_id.production_id
-                                    or l.move_id.production_id.id == i.id
-                                ):
-                                    # Subtract physical reservations, but not virtual mto reservations
-                                    qty_flow -= l.product_uom_id._compute_quantity(
-                                        l.quantity, default_uom
-                                    )
+                            qty_flow -= getReservedQuantity(mv, i.id, default_uom)
                         if qty_flow > 0:
                             operation_materials[item["name"]] = operation_materials.get(
                                 item["name"], 0
